@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Under Maintenance</title>
+  <meta name="description" content="This site is currently under maintenance. We'll be back shortly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: #0a0a0a;
+      overflow: hidden;
+      font-family: 'Unbounded', 'Inter', sans-serif;
+      color: #ffffff;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* ─── Background Dot Grid Canvas ────────────────────── */
+    #dotCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+
+    /* ─── Fluid Text Canvas ─────────────────────────────── */
+    #textCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ─── Overlay Content (sits on top) ─────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ─── Subtitle below the fluid text ─────────────────── */
+    .subtitle-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: clamp(3rem, 8vh, 6rem);
+    }
+
+    .subtitle {
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      font-size: clamp(0.75rem, 1.5vw, 1rem);
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.25);
+      opacity: 0;
+      animation: subtitleIn 1.5s 1.8s ease forwards;
+    }
+
+    .divider-line {
+      width: 40px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.12);
+      margin-bottom: 1.2rem;
+      transform: scaleX(0);
+      animation: lineGrow 1s 1.5s ease forwards;
+    }
+
+    /* ─── Top-left badge ────────────────────────────────── */
+    .top-badge {
+      position: fixed;
+      top: 2rem;
+      left: 2.5rem;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      opacity: 0;
+      animation: fadeIn 1s 2.5s ease forwards;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ffffff;
+      animation: pulseDot 2.5s ease-in-out infinite;
+    }
+
+    .badge-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ─── Top-right timestamp ───────────────────────────── */
+    .top-right {
+      position: fixed;
+      top: 2rem;
+      right: 2.5rem;
+      z-index: 10;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.15);
+      opacity: 0;
+      animation: fadeIn 1s 2.8s ease forwards;
+    }
+
+    /* ─── Bottom corners ────────────────────────────────── */
+    .corner-mark {
+      position: fixed;
+      z-index: 10;
+      pointer-events: none;
+      width: 20px;
+      height: 20px;
+      opacity: 0;
+      animation: fadeIn 1.5s 3s ease forwards;
+    }
+
+    .corner-mark.tl { top: 2rem; left: 2.5rem; border-top: 1px solid rgba(255,255,255,0.08); border-left: 1px solid rgba(255,255,255,0.08); }
+    .corner-mark.tr { top: 2rem; right: 2.5rem; border-top: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); }
+    .corner-mark.bl { bottom: 2rem; left: 2.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); border-left: 1px solid rgba(255,255,255,0.08); }
+    .corner-mark.br { bottom: 2rem; right: 2.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); }
+
+    /* ─── Top Center Name ────────────────────────────────── */
+    .top-name {
+      position: fixed;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      font-size: 0.7rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      opacity: 0;
+      animation: fadeIn 1s 2s ease forwards;
+      white-space: nowrap;
+    }
+
+    /* ─── Animations ─────────────────────────────────────── */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes subtitleIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes lineGrow {
+      to { transform: scaleX(1); }
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(255,255,255,0.4); }
+      50% { opacity: 0.3; box-shadow: 0 0 0px rgba(255,255,255,0); }
+    }
+
+    /* ─── Responsive ─────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .top-badge { top: 1.2rem; left: 1.2rem; }
+      .top-right { top: 1.2rem; right: 1.2rem; }
+      .corner-mark.tl { top: 1.2rem; left: 1.2rem; }
+      .corner-mark.tr { top: 1.2rem; right: 1.2rem; }
+      .corner-mark.bl { bottom: 1.2rem; left: 1.2rem; }
+      .corner-mark.br { bottom: 1.2rem; right: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background: Interactive Dot Grid -->
+  <canvas id="dotCanvas"></canvas>
+
+  <!-- Foreground: Fluid Text Particles -->
+  <canvas id="textCanvas"></canvas>
+
+  <!-- UI Overlay -->
+  <div class="top-name">Vansh Singhvi</div>
+
+  <div class="top-badge">
+    <span class="pulse-dot"></span>
+    <span class="badge-text">System Offline</span>
+  </div>
+
+  <div class="top-right" id="timestamp"></div>
+
+  <div class="subtitle-area">
+    <div class="divider-line"></div>
+    <p class="subtitle">Scheduled maintenance in progress — we'll be back shortly</p>
+  </div>
+
+  <!-- Corner accents -->
+  <div class="corner-mark tl"></div>
+  <div class="corner-mark tr"></div>
+  <div class="corner-mark bl"></div>
+  <div class="corner-mark br"></div>
+
+  <script>
+    // ========================================================
+    // LAYER 1: INTERACTIVE DOT GRID (Background)
+    // ========================================================
+    (function() {
+      const canvas = document.getElementById('dotCanvas');
+      const ctx = canvas.getContext('2d');
+
+      let particlesArray = [];
+
+      // Configuration
+      const spacing = 28;
+      const dotSize = 1.2;
+      const interactionRadius = 90;
+      const pushStrength = 30;
+      const wobbleAmplitude = 14;
+      const wobbleSpeed = 0.007;
+      const returnSpeed = 0.1;
+      const baseOpacity = 0.18;
+      const maxOpacity = 1.0;
+
+      let mouse = { x: undefined, y: undefined, radius: interactionRadius };
+
+      window.addEventListener('mousemove', function(event) {
+        mouse.x = event.x;
+        mouse.y = event.y;
+      });
+
+      window.addEventListener('mouseout', function() {
+        mouse.x = undefined;
+        mouse.y = undefined;
+      });
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        init();
+      }
+      window.addEventListener('resize', resizeCanvas);
+
+      class Particle {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.baseX = x;
+          this.baseY = y;
+          this.opacity = baseOpacity;
+        }
+
+        draw() {
+          ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, dotSize, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        update() {
+          let targetX = this.baseX;
+          let targetY = this.baseY;
+          let targetOpacity = baseOpacity;
+
+          if (mouse.x !== undefined) {
+            let dx = mouse.x - this.baseX;
+            let dy = mouse.y - this.baseY;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < mouse.radius) {
+              let force = (mouse.radius - distance) / mouse.radius;
+
+              let pushX = (dx / distance) * force * pushStrength;
+              let pushY = (dy / distance) * force * pushStrength;
+              let time = Date.now() * wobbleSpeed;
+              let wobbleX = Math.sin(time + this.baseX * 0.05) * (force * wobbleAmplitude);
+              let wobbleY = Math.cos(time + this.baseY * 0.05) * (force * wobbleAmplitude);
+
+              targetX = this.baseX - pushX + wobbleX;
+              targetY = this.baseY - pushY + wobbleY;
+
+              targetOpacity = baseOpacity + (force * (maxOpacity - baseOpacity));
+            }
+          }
+
+          this.x += (targetX - this.x) * returnSpeed;
+          this.y += (targetY - this.y) * returnSpeed;
+          this.opacity += (targetOpacity - this.opacity) * returnSpeed;
+        }
+      }
+
+      function init() {
+        particlesArray = [];
+        for (let y = 0; y < canvas.height; y += spacing) {
+          for (let x = 0; x < canvas.width; x += spacing) {
+            particlesArray.push(new Particle(x, y));
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+          particlesArray[i].draw();
+          particlesArray[i].update();
+        }
+        requestAnimationFrame(animate);
+      }
+
+      resizeCanvas();
+      animate();
+    })();
+
+    // ========================================================
+    // LAYER 2: FLUID TEXT PARTICLES (Foreground)
+    // ========================================================
+    (function() {
+      const canvas = document.getElementById('textCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      canvas.style.pointerEvents = 'auto';
+
+      let particleArray = [];
+
+      // Fluid physics config
+      const mouseRadius = 140;
+      const particleSize = 2;
+      const scanStep = 2;
+
+      const repelForce = 2.5;
+      const swirlForce = 2.5;
+      const spring = 0.045;
+      const friction = 0.84;
+
+      let mouse = { x: undefined, y: undefined, radius: mouseRadius };
+
+      window.addEventListener('mousemove', (event) => {
+        mouse.x = event.x;
+        mouse.y = event.y;
+      });
+
+      window.addEventListener('mouseout', () => {
+        mouse.x = undefined;
+        mouse.y = undefined;
+      });
+
+      class Particle {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.baseX = x;
+          this.baseY = y;
+          this.vx = 0;
+          this.vy = 0;
+        }
+
+        update() {
+          if (mouse.x !== undefined) {
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < mouse.radius) {
+              let force = (mouse.radius - distance) / mouse.radius;
+              let nx = dx / distance;
+              let ny = dy / distance;
+
+              this.vx -= nx * force * repelForce;
+              this.vy -= ny * force * repelForce;
+
+              this.vx += ny * force * swirlForce;
+              this.vy -= nx * force * swirlForce;
+            }
+          }
+
+          this.vx += (this.baseX - this.x) * spring;
+          this.vy += (this.baseY - this.y) * spring;
+
+          this.vx *= friction;
+          this.vy *= friction;
+
+          this.x += this.vx;
+          this.y += this.vy;
+        }
+      }
+
+      function init() {
+        particleArray = [];
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        ctx.fillStyle = 'white';
+
+        // Responsive font sizes
+        const w = canvas.width;
+        let mainSizeVw, underSizeVw;
+        if (w < 500) {
+          mainSizeVw = 8;
+          underSizeVw = 5.5;
+        } else if (w < 900) {
+          mainSizeVw = 6;
+          underSizeVw = 4;
+        } else {
+          mainSizeVw = 7;
+          underSizeVw = 4.5;
+        }
+
+        const mainFontPx = w * mainSizeVw / 100;
+        const underFontPx = w * underSizeVw / 100;
+        const fontFamily = '"Unbounded", "Helvetica Neue", Helvetica, Arial, sans-serif';
+
+        // Measure MAINTENANCE width to find its left edge
+        ctx.font = `900 ${mainFontPx}px ${fontFamily}`;
+        const mainText = 'MAINTENANCE.';
+        const mainWidth = ctx.measureText(mainText).width;
+        const mainLeftX = (canvas.width - mainWidth) / 2;
+
+        // Vertical positioning: center the two-line block
+        const gap = mainFontPx * 0.15;
+        const totalHeight = underFontPx + gap + mainFontPx;
+        const blockTopY = (canvas.height - totalHeight) / 2 - canvas.height * 0.02;
+
+        // Draw "UNDER" — left-aligned with MAINTENANCE's left edge
+        ctx.font = `600 ${underFontPx}px ${fontFamily}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('UNDER', mainLeftX, blockTopY);
+
+        // Draw "MAINTENANCE" below
+        ctx.font = `900 ${mainFontPx}px ${fontFamily}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(mainText, mainLeftX, blockTopY + underFontPx + gap);
+
+        const textCoordinates = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        for (let y = 0; y < textCoordinates.height; y += scanStep) {
+          for (let x = 0; x < textCoordinates.width; x += scanStep) {
+            if (textCoordinates.data[(y * 4 * textCoordinates.width) + (x * 4) + 3] > 128) {
+              particleArray.push(new Particle(x, y));
+            }
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+
+        for (let i = 0; i < particleArray.length; i++) {
+          particleArray[i].update();
+          ctx.fillRect(particleArray[i].x, particleArray[i].y, particleSize, particleSize);
+        }
+        requestAnimationFrame(animate);
+      }
+
+      // Explicitly load Unbounded font before drawing canvas text
+      Promise.all([
+        document.fonts.load('900 48px "Unbounded"'),
+        document.fonts.load('600 48px "Unbounded"')
+      ]).then(() => {
+        init();
+        animate();
+      });
+
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(init, 200);
+      });
+    })();
+
+    // ========================================================
+    // LIVE TIMESTAMP
+    // ========================================================
+    (function() {
+      const el = document.getElementById('timestamp');
+      function update() {
+        const now = new Date();
+        const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        el.textContent = now.toLocaleTimeString('en-US', opts) + ' — ' + now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+      update();
+      setInterval(update, 1000);
+    })();
+  </script>
+</body>
+</html>
